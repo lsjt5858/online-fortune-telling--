@@ -1,0 +1,40 @@
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import UnoCSS from 'unocss/vite'
+import { resolve } from 'path'
+
+export default defineConfig({
+  plugins: [
+    vue(),
+    UnoCSS(),
+  ],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
+    },
+  },
+  server: {
+    port: 3000,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
+  },
+  build: {
+    target: 'es2015',
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vue-vendor': ['vue', 'vue-router', 'pinia'],
+          'vant': ['vant'],
+          'charts': ['echarts'],
+        },
+      },
+    },
+  },
+})

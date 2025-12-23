@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>神机妙算 - 生辰八字输入</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;700&display=swap');
+        
+        :root {
+            --primary-color: #9d2932;
+            --secondary-color: #d4af37;
+            --dark-color: #1a1a1a;
+            --light-color: #f5f5f5;
+            --bg-color: #f9f3e9;
+        }
+        
+        body {
+            font-family: 'Noto Serif SC', serif;
+            background-color: var(--bg-color);
+            color: var(--dark-color);
+        }
+        
+        .title-font {
+            font-family: 'Ma Shan Zheng', cursive;
+        }
+        
+        .bg-pattern {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23f9f3e9"/><path d="M0,50 Q25,25 50,50 T100,50" stroke="%23d4af37" stroke-width="1" fill="none" opacity="0.3"/><path d="M50,0 Q75,25 50,50 T50,100" stroke="%23d4af37" stroke-width="1" fill="none" opacity="0.3"/></svg>');
+            background-repeat: repeat;
+        }
+        
+        .ornament {
+            position: relative;
+        }
+        
+        .ornament::before,
+        .ornament::after {
+            content: '❖';
+            color: var(--secondary-color);
+            margin: 0 10px;
+        }
+        
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--secondary-color);
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            color: var(--secondary-color);
+        }
+        
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        
+        .active-nav {
+            color: var(--secondary-color);
+        }
+        
+        .active-nav::after {
+            width: 100%;
+        }
+        
+        .form-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 1rem;
+            background-color: white;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-select:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .btn-primary:hover {
+            background-color: #7c212c;
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: var(--dark-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #b8941f;
+        }
+        
+        .error-message {
+            color: var(--primary-color);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        
+        .success-message {
+            color: #10b981;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        
+        .form-step {
+            display: none;
+        }
+        
+        .form-step.active {
+            display: block;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+        }
+        
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+        
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #e5e7eb;
+            color: #6b7280;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        .step.active .step-number {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .step.completed .step-number {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .step-title {
+            font-size: 0.875rem;
+            color: #6b7280;
+            transition: color 0.3s ease;
+        }
+        
+        .step.active .step-title,
+        .step.completed .step-title {
+            color: var(--dark-color);
+            font-weight: 600;
+        }
+        
+        .step::before {
+            content: '';
+            position: absolute;
+            top: 16px;
+            left: -50%;
+            width: 100%;
+            height: 2px;
+            background-color: #e5e7eb;
+            z-index: -1;
+        }
+        
+        .step:first-child::before {
+            display: none;
+        }
+        
+        .step.active::before,
+        .step.completed::before {
+            background-color: var(--secondary-color);
+        }
+        
+        .step.completed::after {
+            content: '✓';
+            position: absolute;
+            top: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #10b981;
+            color: white;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .calculation-type-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s ease, transform 0.3s ease;
+        }
+        
+        .calculation-type-card:hover {
+            border-color: var(--secondary-color);
+            transform: translateY(-5px);
+        }
+        
+        .calculation-type-card.selected {
+            border-color: var(--secondary-color);
+            background-color: rgba(212, 175, 55, 0.1);
+        }
+        
+        .calculation-type-icon {
+            font-size: 2.5rem;
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .calculation-type-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .calculation-type-description {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 1.5rem;
+            }
+            
+            .step-title {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-pattern">
+    <!-- 导航栏 -->
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <a href="index.html" class="flex items-center">
+                        <span class="title-font text-3xl text-primary-color mr-2">神机妙算</span>
+                    </a>
+                </div>
+                
+                <!-- 桌面导航 -->
+                <div class="hidden md:flex space-x-8">
+                    <a href="index.html" class="nav-link text-lg">首页</a>
+                    <a href="input.html" class="nav-link active-nav text-lg">命理测算</a>
+                    <a href="knowledge.html" class="nav-link text-lg">命理知识</a>
+                    <a href="help.html" class="nav-link text-lg">帮助中心</a>
+                </div>
+                
+                <!-- 移动端导航按钮 -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-gray-600 hover:text-gray-900 focus:outline-none">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 移动端导航菜单 -->
+            <div id="mobile-menu" class="md:hidden hidden pt-4 pb-2">
+                <a href="index.html" class="block py-2 text-lg font-medium">首页</a>
+                <a href="input.html" class="block py-2 text-lg font-medium text-primary-color">命理测算</a>
+                <a href="knowledge.html" class="block py-2 text-lg font-medium">命理知识</a>
+                <a href="help.html" class="block py-2 text-lg font-medium">帮助中心</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容区域 -->
+    <main class="py-12 px-4">
+        <div class="container mx-auto">
+            <div class="text-center mb-8">
+                <h1 class="title-font text-4xl mb-4">生辰八字信息</h1>
+                <p class="ornament text-lg max-w-3xl mx-auto">请填写您的个人信息，我们将为您生成精准的命理排盘</p>
+            </div>
+            
+            <!-- 步骤指示器 -->
+            <div class="step-indicator max-w-3xl mx-auto mb-8">
+                <div class="step active">
+                    <div class="step-number">1</div>
+                    <div class="step-title">选择测算类型</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-title">基本信息</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-title">出生信息</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-title">确认提交</div>
+                </div>
+            </div>
+            
+            <!-- 表单容器 -->
+            <div class="form-container max-w-3xl mx-auto">
+                <form id="fortune-telling-form">
+                    <!-- 步骤 1: 选择测算类型 -->
+                    <div class="form-step active" id="step-1">
+                        <h2 class="text-2xl font-semibold mb-6 text-center">选择测算类型</h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="calculation-type-card selected" data-type="bazi">
+                                <div class="calculation-type-icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <h3 class="calculation-type-title">八字排盘</h3>
+                                <p class="calculation-type-description">通过出生年月日时排出八字，解读您的性格、事业、财运、婚姻等方面的信息。</p>
+                            </div>
+                            
+                            <div class="calculation-type-card" data-type="qimen">
+                                <div class="calculation-type-icon">
+                                    <i class="fas fa-chess-board"></i>
+                                </div>
+                                <h3 class="calculation-type-title">奇门遁甲</h3>
+                                <p class="calculation-type-description">古老的决策预测工具，帮助您分析当前局势，预测未来发展，做出明智决策。</p>
+                            </div>
+                            
+                            <div class="calculation-type-card" data-type="bagua">
+                                <div class="calculation-type-icon">
+                                    <i class="fas fa-yin-yang"></i>
+                                </div>
+                                <h3 class="calculation-type-title">八卦测算</h3>
+                                <p class="calculation-type-description">通过八卦象数，解读天地万物变化之理，为您提供人生指引和决策参考。</p>
+                            </div>
+                            
+                            <div class="calculation-type-card" data-type="meihua">
+                                <div class="calculation-type-icon">
+                                    <i class="fas fa-leaf"></i>
+                                </div>
+                                <h3 class="calculation-type-title">梅花易数</h3>
+                                <p class="calculation-type-description">基于易经的快速预测方法，通过简单的数字或物象，快速得出预测结果。</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8 text-center">
+                            <button type="button" class="btn-primary next-step" data-next="2">下一步</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 步骤 2: 基本信息 -->
+                    <div class="form-step" id="step-2">
+                        <h2 class="text-2xl font-semibold mb-6 text-center">基本信息</h2>
+                        
+                        <div class="mb-6">
+                            <label for="name" class="form-label">姓名</label>
+                            <input type="text" id="name" name="name" class="form-input" placeholder="请输入您的姓名" required>
+                            <div class="error-message" id="name-error"></div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label class="form-label">性别</label>
+                            <div class="flex space-x-4">
+                                <label class="flex items-center">
+                                    <input type="radio" name="gender" value="male" class="mr-2" checked>
+                                    <span>男</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="gender" value="female" class="mr-2">
+                                    <span>女</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label for="age" class="form-label">年龄</label>
+                            <input type="number" id="age" name="age" class="form-input" placeholder="请输入您的年龄" min="1" max="120" required>
+                            <div class="error-message" id="age-error"></div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label for="education" class="form-label">学历</label>
+                            <select id="education" name="education" class="form-select">
+                                <option value="">请选择学历</option>
+                                <option value="primary">小学</option>
+                                <option value="middle">初中</option>
+                                <option value="high">高中/中专</option>
+                                <option value="college">大专</option>
+                                <option value="bachelor">本科</option>
+                                <option value="master">硕士</option>
+                                <option value="phd">博士及以上</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label for="occupation" class="form-label">职业</label>
+                            <select id="occupation" name="occupation" class="form-select">
+                                <option value="">请选择职业</option>
+                                <option value="student">学生</option>
+                                <option value="teacher">教师</option>
+                                <option value="doctor">医生</option>
+                                <option value="engineer">工程师</option>
+                                <option value="business">商业/金融</option>
+                                <option value="artist">艺术/创意</option>
+                                <option value="service">服务业</option>
+                                <option value="government">政府/公职</option>
+                                <option value="other">其他</option>
+                            </select>
+                        </div>
+                        
+                        <div class="flex justify-between mt-8">
+                            <button type="button" class="btn-secondary prev-step" data-prev="1">上一步</button>
+                            <button type="button" class="btn-primary next-step" data-next="3">下一步</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 步骤 3: 出生信息 -->
+                    <div class="form-step" id="step-3">
+                        <h2 class="text-2xl font-semibold mb-6 text-center">出生信息</h2>
+                        
+                        <div class="mb-6">
+                            <label class="form-label">出生日期</label>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <select id="birth-year" name="birth-year" class="form-select" required>
+                                        <option value="">年份</option>
+                                        <!-- 动态生成年份选项 -->
+                                    </select>
+                                </div>
+                                <div>
+                                    <select id="birth-month" name="birth-month" class="form-select" required>
+                                        <option value="">月份</option>
+                                        <option value="1">1月</option>
+                                        <option value="2">2月</option>
+                                        <option value="3">3月</option>
+                                        <option value="4">4月</option>
+                                        <option value="5">5月</option>
+                                        <option value="6">6月</option>
+                                        <option value="7">7月</option>
+                                        <option value="8">8月</option>
+                                        <option value="9">9月</option>
+                                        <option value="10">10月</option>
+                                        <option value="11">11月</option>
+                                        <option value="12">12月</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <select id="birth-day" name="birth-day" class="form-select" required>
+                                        <option value="">日期</option>
+                                        <!-- 动态生成日期选项 -->
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label class="form-label">出生时间</label>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <select id="birth-hour" name="birth-hour" class="form-select" required>
+                                        <option value="">小时 (0-23)</option>
+                                        <!-- 动态生成小时选项 -->
+                                    </select>
+                                </div>
+                                <div>
+                                    <select id="birth-minute" name="birth-minute" class="form-select" required>
+                                        <option value="">分钟 (0-59)</option>
+                                        <!-- 动态生成分钟选项 -->
+                                    </select>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-2">如果不确定具体时间，请选择最接近的时间段</p>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label for="birth-location" class="form-label">出生地点</label>
+                            <select id="birth-location" name="birth-location" class="form-select" required>
+                                <option value="">请选择出生地点</option>
+                                <option value="beijing">北京市</option>
+                                <option value="shanghai">上海市</option>
+                                <option value="guangzhou">广州市</option>
+                                <option value="shenzhen">深圳市</option>
+                                <option value="chengdu">成都市</option>
+                                <option value="hangzhou">杭州市</option>
+                                <option value="wuhan">武汉市</option>
+                                <option value="xian">西安市</option>
+                                <option value="nanjing">南京市</option>
+                                <option value="other">其他</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label for="other-location" class="form-label">其他地点</label>
+                            <input type="text" id="other-location" name="other-location" class="form-input" placeholder="请输入具体出生地点" disabled>
+                        </div>
+                        
+                        <div class="flex justify-between mt-8">
+                            <button type="button" class="btn-secondary prev-step" data-prev="2">上一步</button>
+                            <button type="button" class="btn-primary next-step" data-next="4">下一步</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 步骤 4: 确认提交 -->
+                    <div class="form-step" id="step-4">
+                        <h2 class="text-2xl font-semibold mb-6 text-center">确认信息</h2>
+                        
+                        <div class="bg-gray-50 p-6 rounded-lg mb-6">
+                            <h3 class="text-xl font-semibold mb-4">测算信息确认</h3>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-gray-600">测算类型:</p>
+                                    <p class="font-semibold" id="confirm-type">八字排盘</p>
+                                </div>
+                                
+                                <div>
+                                    <p class="text-gray-600">姓名:</p>
+                                    <p class="font-semibold" id="confirm-name">-</p>
+                                </div>
+                                
+                                <div>
+                                    <p class="text-gray-600">性别:</p>
+                                    <p class="font-semibold" id="confirm-gender">-</p>
+                                </div>
+                                
+                                <div>
+                                    <p class="text-gray-600">年龄:</p>
+                                    <p class="font-semibold" id="confirm-age">-</p>
+                                </div>
+                                
+                                <div>
+                                    <p class="text-gray-600">出生日期:</p>
+                                    <p class="font-semibold" id="confirm-birthdate">-</p>
+                                </div>
+                                
+                                <div>
+                                    <p class="text-gray-600">出生时间:</p>
+                                    <p class="font-semibold" id="confirm-birthtime">-</p>
+                                </div>
+                                
+                                <div>
+                                    <p class="text-gray-600">出生地点:</p>
+                                    <p class="font-semibold" id="confirm-location">-</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label class="flex items-start">
+                                <input type="checkbox" name="agree-terms" class="mt-1 mr-2" required>
+                                <span>我已阅读并同意<a href="#" class="text-primary-color hover:underline">用户须知</a>和<a href="#" class="text-primary-color hover:underline">隐私政策</a></span>
+                            </label>
+                            <div class="error-message" id="terms-error"></div>
+                        </div>
+                        
+                        <div class="flex justify-between mt-8">
+                            <button type="button" class="btn-secondary prev-step" data-prev="3">上一步</button>
+                            <button type="submit" class="btn-primary">提交测算</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- 底部区域 -->
+    <footer class="bg-gray-900 text-white py-12 px-4 mt-12">
+        <div class="container mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="title-font text-2xl mb-4">神机妙算</h3>
+                    <p class="mb-4">传承千年智慧，揭秘人生奥秘</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-white hover:text-secondary-color">
+                            <i class="fab fa-weixin text-2xl"></i>
+                        </a>
+                        <a href="#" class="text-white hover:text-secondary-color">
+                            <i class="fab fa-weibo text-2xl"></i>
+                        </a>
+                        <a href="#" class="text-white hover:text-secondary-color">
+                            <i class="fas fa-envelope text-2xl"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="text-xl font-semibold mb-4">快速链接</h4>
+                    <ul class="space-y-2">
+                        <li><a href="index.html" class="hover:text-secondary-color">首页</a></li>
+                        <li><a href="input.html" class="hover:text-secondary-color">命理测算</a></li>
+                        <li><a href="knowledge.html" class="hover:text-secondary-color">命理知识</a></li>
+                        <li><a href="help.html" class="hover:text-secondary-color">帮助中心</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-xl font-semibold mb-4">测算类型</h4>
+                    <ul class="space-y-2">
+                        <li><a href="input.html?type=bazi" class="hover:text-secondary-color">八字排盘</a></li>
+                        <li><a href="input.html?type=qimen" class="hover:text-secondary-color">奇门遁甲</a></li>
+                        <li><a href="input.html?type=bagua" class="hover:text-secondary-color">八卦测算</a></li>
+                        <li><a href="input.html?type=meihua" class="hover:text-secondary-color">梅花易数</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-xl font-semibold mb-4">联系我们</h4>
+                    <ul class="space-y-2">
+                        <li class="flex items-center">
+                            <i class="fas fa-phone-alt mr-2"></i>
+                            <span>400-123-4567</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-envelope mr-2"></i>
+                            <span>contact@shenjimiaosuan.com</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-map-marker-alt mr-2"></i>
+                            <span>北京市朝阳区某某大厦1001室</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center">
+                <p>&copy; 2025 神机妙算 版权所有 | 京ICP备12345678号</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 移动端导航菜单切换
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+        
+        // 步骤切换功能
+        document.querySelectorAll('.next-step').forEach(button => {
+            button.addEventListener('click', function() {
+                const nextStep = this.getAttribute('data-next');
+                const currentStep = this.closest('.form-step').id.split('-')[1];
+                
+                // 验证当前步骤
+                if (validateStep(currentStep)) {
+                    // 更新步骤指示器
+                    document.querySelectorAll('.step').forEach(step => {
+                        step.classList.remove('active');
+                    });
+                    document.querySelector(`.step:nth-child(${nextStep})`).classList.add('active');
+                    
+                    // 更新表单步骤
+                    document.querySelectorAll('.form-step').forEach(step => {
+                        step.classList.remove('active');
+                    });
+                    document.getElementById(`step-${nextStep}`).classList.add('active');
+                    
+                    // 更新确认信息
+                    updateConfirmationInfo();
+                }
+            });
+        });
+        
+        document.querySelectorAll('.prev-step').forEach(button => {
+            button.addEventListener('click', function() {
+                const prevStep = this.getAttribute('data-prev');
+                const currentStep = this.closest('.form-step').id.split('-')[1];
+                
+                // 更新步骤指示器
+                document.querySelectorAll('.step').forEach(step => {
+                    step.classList.remove('active');
+                });
+                document.querySelector(`.step:nth-child(${prevStep})`).classList.add('active');
+                
+                // 更新表单步骤
+                document.querySelectorAll('.form-step').forEach(step => {
+                    step.classList.remove('active');
+                });
+                document.getElementById(`step-${prevStep}`).classList.add('active');
+            });
+        });
+        
+        // 测算类型选择
+        document.querySelectorAll('.calculation-type-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.calculation-type-card').forEach(c => {
+                    c.classList.remove('selected');
+                });
+                this.classList.add('selected');
+            });
+        });
+        
+        // 表单验证
+        function validateStep(step) {
+            let isValid = true;
+            
+            if (step === '1') {
+                // 验证测算类型是否选择
+                const selectedType = document.querySelector('.calculation-type-card.selected');
+                if (!selectedType) {
+                    isValid = false;
+                    alert('请选择测算类型');
+                }
+            } else if (step === '2') {
+                // 验证姓名
+                const name = document.getElementById('name').value.trim();
+                if (!name) {
+                    document.getElementById('name-error').textContent = '请输入姓名';
+                    isValid = false;
+                } else {
+                    document.getElementById('name-error').textContent = '';
+                }
+                
+                // 验证年龄
+                const age = document.getElementById('age').value;
+                if (!age || age < 1 || age > 120) {
+                    document.getElementById('age-error').textContent = '请输入有效的年龄';
+                    isValid = false;
+                } else {
+                    document.getElementById('age-error').textContent = '';
+                }
+            } else if (step === '3') {
+                // 验证出生日期和时间
+                const year = document.getElementById('birth-year').value;
+                const month = document.getElementById('birth-month').value;
+                const day = document.getElementById('birth-day').value;
+                const hour = document.getElementById('birth-hour').value;
+                const minute = document.getElementById('birth-minute').value;
+                const location = document.getElementById('birth-location').value;
+                
+                if (!year || !month || !day || !hour || !minute || !location) {
+                    alert('请填写完整的出生信息');
+                    isValid = false;
+                }
+                
+                // 如果选择了其他地点，验证是否填写
+                if (location === 'other') {
+                    const otherLocation = document.getElementById('other-location').value.trim();
+                    if (!otherLocation) {
+                        alert('请填写具体的出生地点');
+                        isValid = false;
+                    }
+                }
+            } else if (step === '4') {
+                // 验证是否同意条款
+                const agreeTerms = document.querySelector('input[name="agree-terms"]').checked;
+                if (!agreeTerms) {
+                    document.getElementById('terms-error').textContent = '请阅读并同意用户须知和隐私政策';
+                    isValid = false;
+                } else {
+                    document.getElementById('terms-error').textContent = '';
+                }
+            }
+            
+            return isValid;
+        }
+        
+        // 更新确认信息
+        function updateConfirmationInfo() {
+            // 获取测算类型
+            const selectedType = document.querySelector('.calculation-type-card.selected');
+            if (selectedType) {
+                const typeText = selectedType.querySelector('.calculation-type-title').textContent;
+                document.getElementById('confirm-type').textContent = typeText;
+            }
+            
+            // 获取姓名
+            const name = document.getElementById('name').value.trim();
+            if (name) {
+                document.getElementById('confirm-name').textContent = name;
+            }
+            
+            // 获取性别
+            const gender = document.querySelector('input[name="gender"]:checked');
+            if (gender) {
+                document.getElementById('confirm-gender').textContent = gender.value === 'male' ? '男' : '女';
+            }
+            
+            // 获取年龄
+            const age = document.getElementById('age').value;
+            if (age) {
+                document.getElementById('confirm-age').textContent = age;
+            }
+            
+            // 获取出生日期
+            const year = document.getElementById('birth-year').value;
+            const month = document.getElementById('birth-month').value;
+            const day = document.getElementById('birth-day').value;
+            if (year && month && day) {
+                document.getElementById('confirm-birthdate').textContent = `${year}年${month}月${day}日`;
+            }
+            
+            // 获取出生时间
+            const hour = document.getElementById('birth-hour').value;
+            const minute = document.getElementById('birth-minute').value;
+            if (hour !== '' && minute !== '') {
+                document.getElementById('confirm-birthtime').textContent = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+            }
+            
+            // 获取出生地点
+            const locationSelect = document.getElementById('birth-location');
+            const location = locationSelect.options[locationSelect.selectedIndex].text;
+            if (location && location !== '请选择出生地点') {
+                if (locationSelect.value === 'other') {
+                    const otherLocation = document.getElementById('other-location').value.trim();
+                    document.getElementById('confirm-location').textContent = otherLocation || location;
+                } else {
+                    document.getElementById('confirm-location').textContent = location;
+                }
+            }
+        }
+        
+        // 动态生成年份选项
+        function generateYearOptions() {
+            const yearSelect = document.getElementById('birth-year');
+            const currentYear = new Date().getFullYear();
+            
+            for (let year = currentYear; year >= 1900; year--) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year + '年';
+                yearSelect.appendChild(option);
+            }
+        }
+        
+        // 动态生成日期选项
+        function generateDayOptions() {
+            const daySelect = document.getElementById('birth-day');
+            
+            for (let day = 1; day <= 31; day++) {
+                const option = document.createElement('option');
+                option.value = day;
+                option.textContent = day + '日';
+                daySelect.appendChild(option);
+            }
+        }
+        
+        // 动态生成小时选项
+        function generateHourOptions() {
+            const hourSelect = document.getElementById('birth-hour');
+            
+            for (let hour = 0; hour < 24; hour++) {
+                const option = document.createElement('option');
+                option.value = hour;
+                option.textContent = hour.toString().padStart(2, '0');
+                hourSelect.appendChild(option);
+            }
+        }
+        
+        // 动态生成分钟选项
+        function generateMinuteOptions() {
+            const minuteSelect = document.getElementById('birth-minute');
+            
+            for (let minute = 0; minute < 60; minute += 5) {
+                const option = document.createElement('option');
+                option.value = minute;
+                option.textContent = minute.toString().padStart(2, '0');
+                minuteSelect.appendChild(option);
+            }
+        }
+        
+        // 监听出生地点选择
+        document.getElementById('birth-location').addEventListener('change', function() {
+            const otherLocationInput = document.getElementById('other-location');
+            if (this.value === 'other') {
+                otherLocationInput.disabled = false;
+                otherLocationInput.required = true;
+            } else {
+                otherLocationInput.disabled = true;
+                otherLocationInput.required = false;
+            }
+        });
+        
+        // 监听月份变化，更新日期选项
+        document.getElementById('birth-month').addEventListener('change', function() {
+            updateDayOptions();
+        });
+        
+        document.getElementById('birth-year').addEventListener('change', function() {
+            updateDayOptions();
+        });
+        
+        // 更新日期选项
+        function updateDayOptions() {
+            const year = parseInt(document.getElementById('birth-year').value);
+            const month = parseInt(document.getElementById('birth-month').value);
+            const daySelect = document.getElementById('birth-day');
+            
+            // 清空现有选项
+            daySelect.innerHTML = '<option value="">日期</option>';
+            
+            if (!year || !month) return;
+            
+            // 计算该月的天数
+            let daysInMonth;
+            if (month === 2) {
+                // 检查是否为闰年
+                daysInMonth = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0) ? 29 : 28;
+            } else if ([4, 6, 9, 11].includes(month)) {
+                daysInMonth = 30;
+            } else {
+                daysInMonth = 31;
+            }
+            
+            // 添加日期选项
+            for (let day = 1; day <= daysInMonth; day++) {
+                const option = document.createElement('option');
+                option.value = day;
+                option.textContent = day + '日';
+                daySelect.appendChild(option);
+            }
+        }
+        
+        // 表单提交处理
+        document.getElementById('fortune-telling-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (validateStep('4')) {
+                // 获取表单数据
+                const formData = {
+                    type: document.querySelector('.calculation-type-card.selected').getAttribute('data-type'),
+                    name: document.getElementById('name').value.trim(),
+                    gender: document.querySelector('input[name="gender"]:checked').value,
+                    age: document.getElementById('age').value,
+                    education: document.getElementById('education').value,
+                    occupation: document.getElementById('occupation').value,
+                    birthYear: document.getElementById('birth-year').value,
+                    birthMonth: document.getElementById('birth-month').value,
+                    birthDay: document.getElementById('birth-day').value,
+                    birthHour: document.getElementById('birth-hour').value,
+                    birthMinute: document.getElementById('birth-minute').value,
+                    birthLocation: document.getElementById('birth-location').value,
+                    otherLocation: document.getElementById('other-location').value.trim()
+                };
+                
+                // 将数据存储在 sessionStorage 中
+                sessionStorage.setItem('fortuneTellingData', JSON.stringify(formData));
+                
+                // 跳转到结果页面
+                window.location.href = 'result.html';
+            }
+        });
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            generateYearOptions();
+            generateDayOptions();
+            generateHourOptions();
+            generateMinuteOptions();
+            
+            // 检查 URL 参数，如果有测算类型，则选中对应卡片
+            const urlParams = new URLSearchParams(window.location.search);
+            const type = urlParams.get('type');
+            if (type) {
+                const card = document.querySelector(`.calculation-type-card[data-type="${type}"]`);
+                if (card) {
+                    document.querySelectorAll('.calculation-type-card').forEach(c => {
+                        c.classList.remove('selected');
+                    });
+                    card.classList.add('selected');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # ========== PostgreSQL ==========
+  postgres:
+    image: postgres:15-alpine
+    container_name: shenji-miaosuan-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: shenji_miaosuan
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - shenji-miaosuan
+
+  # ========== Redis ==========
+  redis:
+    image: redis:7-alpine
+    container_name: shenji-miaosuan-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - shenji-miaosuan
+
+  # ========== API Gateway ==========
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+    container_name: shenji-miaosuan-api-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      NODE_ENV: development
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: shenji_miaosuan
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - shenji-miaosuan
+    volumes:
+      - ./backend/api-gateway/src:/app/src
+      - ./backend/shared:/app/shared
+
+  # ========== Frontend ==========
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: shenji-miaosuan-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - shenji-miaosuan
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  shenji-miaosuan:
+    driver: bridge

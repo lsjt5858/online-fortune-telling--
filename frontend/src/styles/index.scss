@@ -1,0 +1,238 @@
+// ========== 全局变量 ==========
+$primary-color: #c83737;     // 中国红
+$gold-color: #d4a543;        // 金色
+$ink-color: #2c2c2c;         // 墨色
+$bg-color: #f5f5f5;          // 背景色
+$border-color: #e5e5e5;      // 边框色
+
+$font-family: 'Noto Serif SC', serif;
+$font-family-calligraphy: 'Ma Shan Zheng', cursive;
+
+// ========== 基础样式重置 ==========
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: $font-family;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+input,
+textarea {
+  font-family: inherit;
+}
+
+// ========== 通用工具类 ==========
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.page {
+  min-height: 100vh;
+  background-color: $bg-color;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: none;
+
+  &.btn-primary {
+    background: linear-gradient(135deg, $primary-color, $gold-color);
+    color: #fff;
+
+    &:hover {
+      opacity: 0.9;
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+
+  &.btn-outline {
+    border: 1px solid $primary-color;
+    color: $primary-color;
+    background: transparent;
+
+    &:hover {
+      background: rgba($primary-color, 0.05);
+    }
+  }
+
+  &.btn-ghost {
+    background: transparent;
+    color: $ink-color;
+
+    &:hover {
+      background: rgba($ink-color, 0.05);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// ========== 文字样式 ==========
+.text-primary {
+  color: $primary-color;
+}
+
+.text-gold {
+  color: $gold-color;
+}
+
+.text-ink {
+  color: $ink-color;
+}
+
+.text-calligraphy {
+  font-family: $font-family-calligraphy;
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, $primary-color, $gold-color);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+// ========== 布局类 ==========
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.grid {
+  display: grid;
+}
+
+.grid-cols-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+// ========== 间距类 ==========
+@for $i from 0 through 10 {
+  .m-#{$i} {
+    margin: #{$i * 4}px;
+  }
+  .mt-#{$i} {
+    margin-top: #{$i * 4}px;
+  }
+  .mb-#{$i} {
+    margin-bottom: #{$i * 4}px;
+  }
+  .ml-#{$i} {
+    margin-left: #{$i * 4}px;
+  }
+  .mr-#{$i} {
+    margin-right: #{$i * 4}px;
+  }
+  .mx-#{$i} {
+    margin-left: #{$i * 4}px;
+    margin-right: #{$i * 4}px;
+  }
+  .my-#{$i} {
+    margin-top: #{$i * 4}px;
+    margin-bottom: #{$i * 4}px;
+  }
+
+  .p-#{$i} {
+    padding: #{$i * 4}px;
+  }
+  .pt-#{$i} {
+    padding-top: #{$i * 4}px;
+  }
+  .pb-#{$i} {
+    padding-bottom: #{$i * 4}px;
+  }
+  .pl-#{$i} {
+    padding-left: #{$i * 4}px;
+  }
+  .pr-#{$i} {
+    padding-right: #{$i * 4}px;
+  }
+  .px-#{$i} {
+    padding-left: #{$i * 4}px;
+    padding-right: #{$i * 4}px;
+  }
+  .py-#{$i} {
+    padding-top: #{$i * 4}px;
+    padding-bottom: #{$i * 4}px;
+  }
+}
+
+// ========== 响应式 ==========
+@media (max-width: 768px) {
+  .container {
+    padding: 0 12px;
+  }
+
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .grid-cols-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
