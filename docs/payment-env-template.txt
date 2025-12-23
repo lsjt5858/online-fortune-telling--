@@ -1,0 +1,19 @@
+# 支付配置模板
+# 复制到 backend/api-gateway/.env.development 使用
+
+# 支付宝配置（从 https://open.alipay.com 获取）
+ALIPAY_APP_ID=
+ALIPAY_PRIVATE_KEY=
+ALIPAY_PUBLIC_KEY=
+ALIPAY_NOTIFY_URL=https://yourdomain.com/api/v1/payment/alipay/notify
+ALIPAY_RETURN_URL=https://yourdomain.com/payment/success
+
+# 微信支付配置（从 https://pay.weixin.qq.com 获取）
+WECHAT_APP_ID=
+WECHAT_MCH_ID=
+WECHAT_API_V3_KEY=
+WECHAT_PRIVATE_KEY=
+WECHAT_SERIAL_NO=
+WECHAT_NOTIFY_URL=https://yourdomain.com/api/v1/payment/wechat/notify
+
+# 详细配置指南请查看: docs/payment-config-guide.md

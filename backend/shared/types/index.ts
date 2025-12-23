@@ -75,6 +75,7 @@ export interface Order extends BaseEntity {
   amount: number
   status: OrderStatus
   paidAt?: Date
+  expiredAt: Date
 }
 
 // ========== 支付类型 ==========

@@ -12,6 +12,7 @@ import { LoggingInterceptor } from './interceptors/logging.interceptor'
 
 // 认证路由模块
 import { AuthModule } from './routes/auth.module'
+import { PaymentModule } from './routes/payment.module'
 
 // 数据库服务
 import { DatabaseService } from '@pkg/database'
@@ -32,6 +33,7 @@ import { DatabaseService } from '@pkg/database'
 
     // 路由模块
     AuthModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [
@@ -49,4 +51,4 @@ import { DatabaseService } from '@pkg/database'
   ],
   exports: [DatabaseService],
 })
-export class AppModule {}
+export class AppModule { }
