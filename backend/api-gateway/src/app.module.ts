@@ -5,12 +5,16 @@ import { ThrottlerModule } from '@nestjs/throttler'
 
 import { AppController } from './controllers/app.controller'
 import { ThrottlerGuard } from './guards/throttler.guard'
+import { AuthGuard } from './guards/auth.guard'
 import { HttpExceptionFilter } from './filters/http-exception.filter'
 import { TransformInterceptor } from './interceptors/transform.interceptor'
 import { LoggingInterceptor } from './interceptors/logging.interceptor'
 
 // 认证路由模块
 import { AuthModule } from './routes/auth.module'
+
+// 数据库服务
+import { DatabaseService } from '@pkg/database'
 
 @Module({
   imports: [
@@ -31,13 +35,18 @@ import { AuthModule } from './routes/auth.module'
   ],
   controllers: [AppController],
   providers: [
+    // 数据库服务
+    DatabaseService,
+
     // 全局守卫
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: AuthGuard },
 
     // 全局过滤器和拦截器
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
     { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
   ],
+  exports: [DatabaseService],
 })
 export class AppModule {}

@@ -1,5 +1,7 @@
-import { Controller, Post, Body } from '@nestjs/common'
+import { Controller, Post, Body, Get, Request, HttpCode, HttpStatus } from '@nestjs/common'
 import { Public } from '../decorators/public.decorator'
+import { AuthService } from '../services/auth.service'
+import { UserInfo, TokenPair } from '@shared/types'
 
 export class SendSmsDto {
   phone: string
@@ -14,68 +16,65 @@ export class LoginWithWechatDto {
   code: string
 }
 
+export class RefreshTokenDto {
+  refreshToken: string
+}
+
 @Controller('v1/auth')
 export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
   @Public()
   @Post('sms/send')
-  sendSms(@Body() dto: SendSmsDto) {
-    // TODO: 调用短信服务
-    return {
-      expireIn: 300,
-    }
+  @HttpCode(HttpStatus.OK)
+  async sendSms(@Body() dto: SendSmsDto) {
+    return this.authService.sendSmsCode(dto.phone)
   }
 
   @Public()
   @Post('login/phone')
-  loginWithPhone(@Body() dto: LoginWithPhoneDto) {
-    // TODO: 调用用户服务
+  async loginWithPhone(@Body() dto: LoginWithPhoneDto) {
+    const result = await this.authService.loginWithPhone(dto.phone, dto.code)
     return {
-      token: 'jwt_token',
-      refreshToken: 'refresh_token',
-      userInfo: {
-        id: '1',
-        phone: dto.phone,
-        nickname: '用户',
-        avatar: '',
-        vipLevel: 0,
-        vipExpireAt: null,
-        points: 0,
-        createdAt: new Date().toISOString(),
-      },
+      accessToken: result.tokenPair.accessToken,
+      refreshToken: result.tokenPair.refreshToken,
+      expiresIn: result.tokenPair.expiresIn,
+      userInfo: result.userInfo,
     }
   }
 
   @Public()
   @Post('login/wechat')
-  loginWithWechat(@Body() dto: LoginWithWechatDto) {
-    // TODO: 调用微信登录
+  async loginWithWechat(@Body() dto: LoginWithWechatDto) {
+    const result = await this.authService.loginWithWechat(dto.code)
     return {
-      token: 'jwt_token',
-      refreshToken: 'refresh_token',
-      userInfo: {
-        id: '1',
-        phone: '',
-        nickname: '微信用户',
-        avatar: '',
-        vipLevel: 0,
-        vipExpireAt: null,
-        points: 0,
-        createdAt: new Date().toISOString(),
-      },
+      accessToken: result.tokenPair.accessToken,
+      refreshToken: result.tokenPair.refreshToken,
+      expiresIn: result.tokenPair.expiresIn,
+      userInfo: result.userInfo,
     }
   }
 
   @Post('logout')
-  logout() {
-    // TODO: 清除 token
+  @HttpCode(HttpStatus.OK)
+  async logout(@Request() req, @Body() body: { refreshToken: string }) {
+    await this.authService.logout(req.user.userId, body.refreshToken)
     return { success: true }
   }
 
+  @Public()
   @Post('refresh')
-  refreshToken(@Body() body: { refreshToken: string }) {
-    // TODO: 刷新 token
+  async refreshToken(@Body() dto: RefreshTokenDto) {
+    const tokenPair = await this.authService.refreshTokens(dto.refreshToken)
     return {
-      token: 'new_jwt_token',
+      accessToken: tokenPair.accessToken,
+      refreshToken: tokenPair.refreshToken,
+      expiresIn: tokenPair.expiresIn,
     }
+  }
+
+  @Get('user-info')
+  async getUserInfo(@Request() req) {
+    return this.authService.getUserInfo(req.user.userId)
   }
 }
