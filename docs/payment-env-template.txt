@@ -1,19 +1,104 @@
-# 支付配置模板
-# 复制到 backend/api-gateway/.env.development 使用
+# ========================================
+# 神机妙算 - 支付配置模板
+# ========================================
+# 使用说明：
+#   1. 复制此文件到 backend/api-gateway/.env.development
+#   2. 填写您的支付配置信息
+#   3. 详细配置指南请查看: docs/payment-config-guide.md
+# ========================================
 
-# 支付宝配置（从 https://open.alipay.com 获取）
+# ========== 环境配置 ==========
+NODE_ENV=development
+
+# ========== 支付宝配置 ==========
+# 获取地址：https://open.alipay.com
+# 开发环境可使用沙箱：https://openhome.alipay.com/develop/sandbox/app
+
+# 应用APPID（16位纯数字，如：2021001234567890）
 ALIPAY_APP_ID=
+
+# 应用私钥（RSA2，2048位）
+# 生成方式：使用"支付宝开放平台开发助手"或 openssl 命令生成
+# 格式要求：去掉头尾的 -----BEGIN...----- 和 -----END...-----，只保留中间的密钥内容
+# 示例格式：MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC...
 ALIPAY_PRIVATE_KEY=
+
+# 支付宝公钥（上传您的应用公钥后，支付宝平台返回的公钥）
+# 注意：不是您的应用公钥，而是支付宝返回的公钥！
+# 格式要求：去掉头尾的 -----BEGIN...----- 和 -----END...-----
+# 示例格式：MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxxxx...
 ALIPAY_PUBLIC_KEY=
+
+# 异步通知回调地址（支付宝服务器主动通知的地址）
+# 生产环境必须是公网可访问的HTTPS地址
+# 开发环境可使用内网穿透工具（如：ngrok、frp）
 ALIPAY_NOTIFY_URL=https://yourdomain.com/api/v1/payment/alipay/notify
+
+# 同步跳转地址（用户支付完成后浏览器跳转的地址）
 ALIPAY_RETURN_URL=https://yourdomain.com/payment/success
 
-# 微信支付配置（从 https://pay.weixin.qq.com 获取）
+# ========== 微信支付配置 ==========
+# 获取地址：https://pay.weixin.qq.com
+
+# 微信AppID（在微信公众平台或开放平台获取）
+# APP支付：微信开放平台 https://open.weixin.qq.com
+# 小程序：小程序后台 https://mp.weixin.qq.com
+# 公众号：公众号后台 https://mp.weixin.qq.com
 WECHAT_APP_ID=
+
+# 商户号（10位纯数字，在微信商户平台获取）
 WECHAT_MCH_ID=
+
+# APIv3密钥（32位字符串，在商户平台 账户中心 -> API安全 -> 设置APIv3密钥）
+# 用于回调数据解密
 WECHAT_API_V3_KEY=
+
+# 商户私钥（apiclient_key.pem 文件内容）
+# 获取方式：商户平台 -> 账户中心 -> API安全 -> 申请API证书 -> 下载证书
+# 格式要求：去掉头尾的 -----BEGIN...----- 和 -----END...-----
 WECHAT_PRIVATE_KEY=
+
+# 证书序列号（在商户平台 API安全 页面查看）
+# 或使用命令：openssl x509 -in apiclient_cert.pem -noout -serial
 WECHAT_SERIAL_NO=
+
+# 支付回调地址（微信服务器推送支付结果的通知地址）
+# 生产环境必须是公网可访问的HTTPS地址
 WECHAT_NOTIFY_URL=https://yourdomain.com/api/v1/payment/wechat/notify
 
-# 详细配置指南请查看: docs/payment-config-guide.md
+# ========== 可选配置 ==========
+
+# 支付超时时间（分钟，默认30分钟）
+# PAYMENT_TIMEOUT=30
+
+# 是否启用沙箱环境（开发环境建议开启）
+# 支付宝沙箱：https://openhome.alipay.com/develop/sandbox/app
+# SANDBOX_ENABLED=true
+
+# 日志级别（debug, info, warn, error）
+# PAYMENT_LOG_LEVEL=info
+
+# ========== 配置验证 ==========
+# 配置完成后，可使用以下命令验证配置：
+#   cd backend/api-gateway
+#   npm run build
+#   检查是否有配置相关的编译错误
+
+# ========== 安全提示 ==========
+# ⚠️  重要提醒：
+#   1. 私钥严禁提交到代码仓库！
+#   2. 生产环境务必使用HTTPS
+#   3. 定期更换API密钥
+#   4. .env文件已在.gitignore中，请勿移除
+#   5. 密钥格式必须正确，去掉头尾标识
+
+# ========== 常见问题 ==========
+# Q: 密钥格式如何转换？
+# A: 私钥去掉 -----BEGIN PRIVATE KEY----- 和换行符，只保留中间内容
+#
+# Q: 开发环境如何测试？
+# A: 1. 使用支付宝/微信沙箱环境
+#    2. 使用内网穿透工具暴露本地服务
+#
+# Q: 沙箱账号在哪里获取？
+# A: 支付宝沙箱提供测试买家账号，微信需联系客服申请
