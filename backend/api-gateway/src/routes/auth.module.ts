@@ -4,6 +4,7 @@ import { PassportModule } from '@nestjs/passport'
 import { AuthController } from '../controllers/auth.controller'
 import { AuthService } from '../services/auth.service'
 import { JwtService } from '../services/jwt.service'
+import { WechatService } from '../services/wechat.service'
 import { JwtStrategy } from '../strategies/jwt.strategy'
 import { DatabaseService } from '@pkg/database'
 import { UserRepository, SmsRepository, RefreshTokenRepository } from '@shared/repositories'
@@ -21,12 +22,13 @@ import { jwtConfig } from '@shared/config'
   providers: [
     AuthService,
     JwtService,
+    WechatService,
     JwtStrategy,
     DatabaseService,
     UserRepository,
     SmsRepository,
     RefreshTokenRepository,
   ],
-  exports: [AuthService, JwtService],
+  exports: [AuthService, JwtService, WechatService],
 })
 export class AuthModule {}

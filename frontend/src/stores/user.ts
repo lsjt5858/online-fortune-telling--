@@ -3,7 +3,8 @@ import { ref, computed } from 'vue'
 
 export interface UserInfo {
   id: string
-  phone: string
+  phone?: string
+  openid?: string
   nickname: string
   avatar: string
   vipLevel: number

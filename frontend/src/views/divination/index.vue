@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { DivinationType } from '@/types'
+import { useAuth } from '@/composables/useAuth'
+import LoginModal from '@/components/common/LoginModal.vue'
 
 const router = useRouter()
+const { showLoginModal, requireAuth, onLoginSuccess } = useAuth()
 
 const divinationTypes = [
   {
@@ -39,8 +42,11 @@ const divinationTypes = [
   },
 ]
 
+// 选择测算类型时，先检查登录状态
 const handleSelect = (type: DivinationType) => {
-  router.push({ name: `divination-${type}` })
+  requireAuth(() => {
+    router.push({ name: `divination-${type}` })
+  })
 }
 
 const goBack = () => {
@@ -81,6 +87,12 @@ const goBack = () => {
         </div>
       </div>
     </div>
+
+    <!-- 登录弹窗 -->
+    <LoginModal
+      v-model:visible="showLoginModal"
+      @success="onLoginSuccess"
+    />
   </div>
 </template>
 

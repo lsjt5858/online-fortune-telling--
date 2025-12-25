@@ -2,6 +2,7 @@ import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/co
 import { nanoid } from 'nanoid'
 import { UserRepository, SmsRepository, RefreshTokenRepository } from '@shared/repositories'
 import { JwtService, TokenPair } from './jwt.service'
+import { WechatService } from './wechat.service'
 import { UserInfo } from '@shared/types'
 
 @Injectable()
@@ -11,6 +12,7 @@ export class AuthService {
     private readonly smsRepo: SmsRepository,
     private readonly refreshTokenRepo: RefreshTokenRepository,
     private readonly jwtService: JwtService,
+    private readonly wechatService: WechatService,
   ) {}
 
   async sendSmsCode(phone: string): Promise<{ expireIn: number }> {
@@ -56,26 +58,48 @@ export class AuthService {
   }
 
   async loginWithWechat(code: string): Promise<{ tokenPair: TokenPair; userInfo: UserInfo }> {
-    // TODO: 调用微信API获取用户信息
-    // const wechatUserInfo = await this.getWechatUserInfo(code)
-
-    // 模拟微信返回数据
-    const mockWechatUser = {
-      openid: `wx_${nanoid(20)}`,
-      unionid: null,
-      nickname: '微信用户',
-      avatar: '',
+    // 调用微信API获取用户信息
+    let wechatUserInfo
+    try {
+      // 根据 code 来源判断使用哪个接口
+      if (this.wechatService.isMpCode(code)) {
+        wechatUserInfo = await this.wechatService.getUserInfoByMpCode(code)
+      } else {
+        wechatUserInfo = await this.wechatService.getUserInfoByOpenCode(code)
+      }
+    } catch (error) {
+      // 开发环境下使用模拟数据
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[DEV] 使用模拟微信用户数据')
+        wechatUserInfo = {
+          openid: `wx_${nanoid(20)}`,
+          unionid: null,
+          nickname: '微信用户',
+          headimgurl: '',
+        }
+      } else {
+        throw error
+      }
     }
 
     // 查找或创建用户
-    let user = await this.userRepo.findByOpenid(mockWechatUser.openid)
+    let user = await this.userRepo.findByOpenid(wechatUserInfo.openid)
     if (!user) {
       user = await this.userRepo.create({
-        openid: mockWechatUser.openid,
-        unionid: mockWechatUser.unionid,
-        nickname: mockWechatUser.nickname,
-        avatar: mockWechatUser.avatar,
+        openid: wechatUserInfo.openid,
+        unionid: wechatUserInfo.unionid,
+        nickname: wechatUserInfo.nickname || this.generateNickname(),
+        avatar: wechatUserInfo.headimgurl || '',
       })
+    } else {
+      // 更新用户信息
+      if (wechatUserInfo.nickname || wechatUserInfo.headimgurl) {
+        await this.userRepo.update(user.id, {
+          nickname: wechatUserInfo.nickname || user.nickname,
+          avatar: wechatUserInfo.headimgurl || user.avatar,
+        })
+        user = await this.userRepo.findById(user.id)
+      }
     }
 
     // 生成token

@@ -3,16 +3,19 @@ import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { authApi } from '@/api/modules'
 import { useUserStore } from '@/stores/user'
+import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const { loginWithWechat } = useAuth()
 
 const phone = ref('')
 const code = ref('')
 const isSending = ref(false)
 const countdown = ref(0)
 const isLoading = ref(false)
+const isWechatLoading = ref(false)
 
 const sendCode = async () => {
   if (!phone.value) {
@@ -49,6 +52,16 @@ const handleLogin = async () => {
     router.push(redirect || '/')
   } finally {
     isLoading.value = false
+  }
+}
+
+const handleWechatLogin = async () => {
+  isWechatLoading.value = true
+  try {
+    await loginWithWechat()
+  } catch (err) {
+    console.error('微信登录失败:', err)
+    isWechatLoading.value = false
   }
 }
 </script>
@@ -113,9 +126,9 @@ const handleLogin = async () => {
         <div class="divider">
           <span>其他登录方式</span>
         </div>
-        <button class="wechat-btn">
+        <button class="wechat-btn" :disabled="isWechatLoading" @click="handleWechatLogin">
           <div class="i-mdi-wechat" />
-          微信一键登录
+          {{ isWechatLoading ? '登录中...' : '微信一键登录' }}
         </button>
       </div>
     </div>

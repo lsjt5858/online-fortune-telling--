@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { divinationApi } from '@/api/modules'
 import { DivinationType } from '@/types'
+import { useAuth } from '@/composables/useAuth'
+import LoginModal from '@/components/common/LoginModal.vue'
 
 const router = useRouter()
+const { showLoginModal, requireAuth, onLoginSuccess, closeLoginModal } = useAuth()
 
 const divinationTypes = ref([
   {
@@ -41,8 +43,18 @@ const divinationTypes = ref([
   },
 ])
 
+// 选择测算类型时，先检查登录状态
 const handleSelect = (type: DivinationType) => {
-  router.push({ name: `divination-${type}` })
+  requireAuth(() => {
+    router.push({ name: `divination-${type}` })
+  })
+}
+
+// 点击立即测算按钮
+const handleStartDivination = () => {
+  requireAuth(() => {
+    router.push('/divination')
+  })
 }
 </script>
 
@@ -66,7 +78,7 @@ const handleSelect = (type: DivinationType) => {
       <div class="container">
         <h2 class="banner-title text-calligraphy">洞察天机，预知未来</h2>
         <p class="banner-subtitle">专业在线算命平台，传承千年智慧</p>
-        <button class="btn btn-primary mt-4" @click="router.push('/divination')">
+        <button class="btn btn-primary mt-4" @click="handleStartDivination">
           立即测算
         </button>
       </div>
@@ -117,6 +129,12 @@ const handleSelect = (type: DivinationType) => {
         <span>我的</span>
       </router-link>
     </nav>
+
+    <!-- 登录弹窗 -->
+    <LoginModal
+      v-model:visible="showLoginModal"
+      @success="onLoginSuccess"
+    />
   </div>
 </template>
 

@@ -21,11 +21,11 @@ export const authApi = {
 
   // 手机号登录/注册
   loginWithPhone: (phone: string, code: string) =>
-    request.post<{ token: string; userInfo: UserInfo }>('/auth/login/phone', { phone, code }),
+    request.post<{ token: string; refreshToken: string; expiresIn: number; userInfo: UserInfo }>('/auth/login/phone', { phone, code }),
 
   // 微信登录
   loginWithWechat: (code: string) =>
-    request.post<{ token: string; userInfo: UserInfo }>('/auth/login/wechat', { code }),
+    request.post<{ token: string; refreshToken: string; expiresIn: number; userInfo: UserInfo }>('/auth/login/wechat', { code }),
 
   // 刷新令牌
   refreshToken: (refreshToken: string) =>

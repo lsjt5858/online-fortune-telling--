@@ -18,25 +18,25 @@ const routes: RouteRecordRaw[] = [
     path: '/divination/bazi',
     name: 'divination-bazi',
     component: () => import('@/views/divination/bazi/index.vue'),
-    meta: { title: '八字排盘' },
+    meta: { title: '八字排盘', requiresAuth: true },
   },
   {
     path: '/divination/qimen',
     name: 'divination-qimen',
     component: () => import('@/views/divination/qimen/index.vue'),
-    meta: { title: '奇门遁甲' },
+    meta: { title: '奇门遁甲', requiresAuth: true },
   },
   {
     path: '/divination/bagua',
     name: 'divination-bagua',
     component: () => import('@/views/divination/bagua/index.vue'),
-    meta: { title: '八卦测算' },
+    meta: { title: '八卦测算', requiresAuth: true },
   },
   {
     path: '/divination/meihua',
     name: 'divination-meihua',
     component: () => import('@/views/divination/meihua/index.vue'),
-    meta: { title: '梅花易数' },
+    meta: { title: '梅花易数', requiresAuth: true },
   },
   {
     path: '/result/:id',
@@ -61,6 +61,12 @@ const routes: RouteRecordRaw[] = [
     name: 'login',
     component: () => import('@/views/user/login.vue'),
     meta: { title: '登录' },
+  },
+  {
+    path: '/auth/wechat/callback',
+    name: 'wechat-callback',
+    component: () => import('@/views/auth/WechatCallback.vue'),
+    meta: { title: '微信登录' },
   },
   {
     path: '/vip',
