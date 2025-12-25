@@ -1,7 +1,7 @@
-import { injectable } from 'tsyringe'
+import { Injectable } from '@nestjs/common'
 import { DatabaseService } from '@pkg/database'
 
-@injectable()
+@Injectable()
 export class RefreshTokenRepository {
   constructor(private readonly db: DatabaseService) {}
 

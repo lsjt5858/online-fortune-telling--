@@ -4,14 +4,14 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # 复制 package.json 和 lock 文件
-COPY package*.json ./
-COPY pnpm-lock.yaml* ./
+COPY frontend/package*.json ./
+COPY frontend/pnpm-lock.yaml* ./
 
 # 安装 pnpm 和依赖
 RUN npm install -g pnpm && pnpm install --frozen-lockfile
 
 # 复制源代码
-COPY . .
+COPY frontend/ .
 
 # 构建
 RUN pnpm build

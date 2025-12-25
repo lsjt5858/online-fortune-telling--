@@ -1,4 +1,4 @@
-import { injectable } from 'tsyringe'
+import { Injectable } from '@nestjs/common'
 import { DatabaseService } from '@pkg/database'
 import { UserInfo } from '@shared/types'
 
@@ -18,7 +18,7 @@ export interface UpdateUserDto {
   points?: number
 }
 
-@injectable()
+@Injectable()
 export class UserRepository {
   constructor(private readonly db: DatabaseService) {}
 

@@ -92,3 +92,10 @@ export interface Payment extends BaseEntity {
   status: string
   paidAt?: Date
 }
+
+// ========== Token 类型 ==========
+export interface TokenPair {
+  accessToken: string
+  refreshToken: string
+  expiresIn: number
+}

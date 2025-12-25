@@ -1,8 +1,8 @@
-import { injectable } from 'tsyringe'
+import { Injectable } from '@nestjs/common'
 import { DatabaseService } from '@pkg/database'
 import { Payment, PaymentChannel } from '@shared/types'
 
-@injectable()
+@Injectable()
 export class PaymentRepository {
   constructor(private readonly db: DatabaseService) {}
 

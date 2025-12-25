@@ -1,8 +1,8 @@
-import { injectable } from 'tsyringe'
+import { Injectable } from '@nestjs/common'
 import { DatabaseService } from '@pkg/database'
 import { DivinationType, DivinationResult, PaginationParams, PaginationResponse } from '@shared/types'
 
-@injectable()
+@Injectable()
 export class DivinationRepository {
   constructor(private readonly db: DatabaseService) {}
 
@@ -60,7 +60,7 @@ export class DivinationRepository {
 
     return {
       list: rows,
-      total: parseInt(countRow.count),
+      total: parseInt(String(countRow.count)),
       page: pagination.page,
       pageSize: pagination.pageSize,
     }
