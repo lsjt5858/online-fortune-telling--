@@ -326,9 +326,18 @@ export function getWuXing(ganZhi: string): string {
     午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水',
   }
 
+  // 单字符直接返回
+  if (ganZhi.length === 1) {
+    return wuXingMap[ganZhi] || ''
+  }
+
   const [gan, zhi] = ganZhi.split('')
-  const ganWuXing = wuXingMap[gan]
-  const zhiWuXing = wuXingMap[zhi]
+  const ganWuXing = wuXingMap[gan] || ''
+  const zhiWuXing = wuXingMap[zhi] || ''
+
+  if (!ganWuXing || !zhiWuXing) {
+    return ganWuXing || zhiWuXing || ''
+  }
 
   if (ganWuXing === zhiWuXing) {
     return ganWuXing // 天干地支同五行

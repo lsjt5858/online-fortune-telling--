@@ -14,11 +14,11 @@ export class DivinationRepository {
     isVip: boolean
   ): Promise<DivinationResult> {
     const row = await this.db.queryOne<any>(
-      `INSERT INTO divinations (user_id, type, input_data, result_data, is_vip)
+      `INSERT INTO divination_records (user_id, type, input_data, result_data, is_vip)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING id, user_id as "userId", type, input_data as "inputData",
                  result_data as "resultData", is_vip as "isVip",
-                 created_at as "createdAt", updated_at as "updatedAt"`,
+                 created_at as "createdAt"`,
       [userId, type, JSON.stringify(inputData), JSON.stringify(resultData), isVip]
     )
     return row
@@ -28,8 +28,8 @@ export class DivinationRepository {
     const row = await this.db.queryOne<any>(
       `SELECT id, user_id as "userId", type, input_data as "inputData",
               result_data as "resultData", is_vip as "isVip",
-              created_at as "createdAt", updated_at as "updatedAt"
-       FROM divinations WHERE id = $1`,
+              created_at as "createdAt"
+       FROM divination_records WHERE id = $1`,
       [id]
     )
     return row || null
@@ -45,34 +45,34 @@ export class DivinationRepository {
       this.db.query<any>(
         `SELECT id, user_id as "userId", type, input_data as "inputData",
                 result_data as "resultData", is_vip as "isVip",
-                created_at as "createdAt", updated_at as "updatedAt"
-         FROM divinations
+                created_at as "createdAt"
+         FROM divination_records
          WHERE user_id = $1
          ORDER BY created_at DESC
          LIMIT $2 OFFSET $3`,
         [userId, pagination.pageSize, offset]
       ),
-      this.db.queryOne<{ count: number }>(
-        `SELECT COUNT(*) as count FROM divinations WHERE user_id = $1`,
+      this.db.queryOne<{ count: string }>(
+        `SELECT COUNT(*) as count FROM divination_records WHERE user_id = $1`,
         [userId]
       ),
     ])
 
     return {
       list: rows,
-      total: parseInt(String(countRow.count)),
+      total: parseInt(countRow?.count || '0', 10),
       page: pagination.page,
       pageSize: pagination.pageSize,
     }
   }
 
   async getUserFreeCount(userId: string, type: DivinationType): Promise<number> {
-    const row = await this.db.queryOne<{ count: number }>(
-      `SELECT COUNT(*) as count FROM divinations
+    const row = await this.db.queryOne<{ count: string }>(
+      `SELECT COUNT(*) as count FROM divination_records
        WHERE user_id = $1 AND type = $2 AND is_vip = FALSE
        AND created_at > CURRENT_TIMESTAMP - INTERVAL '1 day'`,
       [userId, type]
     )
-    return row.count
+    return parseInt(row?.count || '0', 10)
   }
 }
