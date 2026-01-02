@@ -20,12 +20,12 @@ export class OrderRepository {
     const expiredAt = new Date(Date.now() + expireMinutes * 60 * 1000)
 
     const row = await this.db.queryOne<any>(
-      `INSERT INTO orders (order_no, user_id, service_type, service_id, amount)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO orders (order_no, user_id, service_type, service_id, amount, expired_at)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, order_no as "orderNo", user_id as "userId", service_type as "serviceType",
                  service_id as "serviceId", amount, status, paid_at as "paidAt",
-                 created_at as "createdAt"`,
-      [orderNo, dto.userId, dto.serviceType, dto.serviceId, dto.amount]
+                 expired_at as "expiredAt", created_at as "createdAt"`,
+      [orderNo, dto.userId, dto.serviceType, dto.serviceId, dto.amount, expiredAt]
     )
     return row
   }
@@ -34,7 +34,7 @@ export class OrderRepository {
     const row = await this.db.queryOne<any>(
       `SELECT id, order_no as "orderNo", user_id as "userId", service_type as "serviceType",
               service_id as "serviceId", amount, status, paid_at as "paidAt",
-              created_at as "createdAt"
+              expired_at as "expiredAt", created_at as "createdAt"
        FROM orders WHERE id = $1`,
       [id]
     )
@@ -45,7 +45,7 @@ export class OrderRepository {
     const row = await this.db.queryOne<any>(
       `SELECT id, order_no as "orderNo", user_id as "userId", service_type as "serviceType",
               service_id as "serviceId", amount, status, paid_at as "paidAt",
-              created_at as "createdAt"
+              expired_at as "expiredAt", created_at as "createdAt"
        FROM orders WHERE order_no = $1`,
       [orderNo]
     )
@@ -62,7 +62,7 @@ export class OrderRepository {
       this.db.query<any>(
         `SELECT id, order_no as "orderNo", user_id as "userId", service_type as "serviceType",
                 service_id as "serviceId", amount, status, paid_at as "paidAt",
-                created_at as "createdAt"
+                expired_at as "expiredAt", created_at as "createdAt"
          FROM orders
          WHERE user_id = $1
          ORDER BY created_at DESC
@@ -90,7 +90,7 @@ export class OrderRepository {
        WHERE id = $1
        RETURNING id, order_no as "orderNo", user_id as "userId", service_type as "serviceType",
                  service_id as "serviceId", amount, status, paid_at as "paidAt",
-                 created_at as "createdAt"`,
+                 expired_at as "expiredAt", created_at as "createdAt"`,
       [id, status, paidAt]
     )
     return row

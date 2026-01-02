@@ -65,6 +65,13 @@ export enum OrderStatus {
   COMPLETED = 'completed',
   REFUNDED = 'refunded',
   EXPIRED = 'expired',
+  CANCELLED = 'cancelled',
+}
+
+export enum ServiceType {
+  VIP = 'vip',
+  DIVINATION = 'divination',
+  CONSULTATION = 'consultation',
 }
 
 export interface Order extends BaseEntity {
@@ -78,10 +85,25 @@ export interface Order extends BaseEntity {
   expiredAt: Date
 }
 
+export interface OrderDetail extends Order {
+  serviceName: string
+  amountYuan: string
+  statusText: string
+  isExpired: boolean
+}
+
 // ========== 支付类型 ==========
 export enum PaymentChannel {
   WECHAT = 'wechat',
   ALIPAY = 'alipay',
+}
+
+export enum PaymentStatus {
+  PENDING = 'pending',
+  SUCCESS = 'success',
+  FAILED = 'failed',
+  REFUNDED = 'refunded',
+  CLOSED = 'closed',
 }
 
 export interface Payment extends BaseEntity {
@@ -90,7 +112,15 @@ export interface Payment extends BaseEntity {
   channel: PaymentChannel
   amount: number
   status: string
+  transactionId?: string
   paidAt?: Date
+}
+
+export interface PaymentDetail extends Payment {
+  orderNo: string
+  channelText: string
+  amountYuan: string
+  statusText: string
 }
 
 // ========== Token 类型 ==========

@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS orders (
     amount INTEGER NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
     paid_at TIMESTAMP,
+    expired_at TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '30 minutes'),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -78,10 +79,12 @@ CREATE TABLE IF NOT EXISTS orders (
 CREATE INDEX idx_orders_user ON orders(user_id);
 CREATE INDEX idx_orders_no ON orders(order_no);
 CREATE INDEX idx_orders_status ON orders(status);
+CREATE INDEX idx_orders_expired ON orders(expired_at);
 
 -- ========== 支付记录表 ==========
 CREATE TABLE IF NOT EXISTS payments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    payment_id VARCHAR(50) NOT NULL UNIQUE,
     order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
     channel VARCHAR(20) NOT NULL,
     transaction_id VARCHAR(100),
@@ -90,11 +93,14 @@ CREATE TABLE IF NOT EXISTS payments (
     pay_info JSONB,
     callback_data JSONB,
     paid_at TIMESTAMP,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX idx_payments_payment_id ON payments(payment_id);
 CREATE INDEX idx_payments_order ON payments(order_id);
 CREATE INDEX idx_payments_transaction ON payments(transaction_id);
+CREATE INDEX idx_payments_status ON payments(status);
 
 -- ========== VIP 配置表 ==========
 CREATE TABLE IF NOT EXISTS vip_configs (
