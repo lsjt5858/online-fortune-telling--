@@ -1,22 +1,36 @@
 import { Controller, Post, Body, Get, Request, HttpCode, HttpStatus } from '@nestjs/common'
+import { IsString, IsNotEmpty, Length, Matches } from 'class-validator'
 import { Public } from '../decorators/public.decorator'
 import { AuthService } from '../services/auth.service'
-import { UserInfo, TokenPair } from '@shared/types'
 
 export class SendSmsDto {
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^1[3-9]\d{9}$/, { message: '请输入正确的手机号' })
   phone: string
 }
 
 export class LoginWithPhoneDto {
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^1[3-9]\d{9}$/, { message: '请输入正确的手机号' })
   phone: string
+
+  @IsString()
+  @IsNotEmpty()
+  @Length(6, 6, { message: '验证码为6位数字' })
   code: string
 }
 
 export class LoginWithWechatDto {
+  @IsString()
+  @IsNotEmpty()
   code: string
 }
 
 export class RefreshTokenDto {
+  @IsString()
+  @IsNotEmpty()
   refreshToken: string
 }
 

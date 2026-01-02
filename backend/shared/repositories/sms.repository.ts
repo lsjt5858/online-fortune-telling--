@@ -33,12 +33,12 @@ export class SmsRepository {
   }
 
   async canSendSms(phone: string, intervalSeconds: number = 60): Promise<boolean> {
-    const row = await this.db.queryOne<{ count: number }>(
+    const row = await this.db.queryOne<{ count: string }>(
       `SELECT COUNT(*) as count FROM sms_codes
        WHERE phone = $1 AND created_at > CURRENT_TIMESTAMP - INTERVAL '1 second' * $2`,
       [phone, intervalSeconds]
     )
-    return row.count === 0
+    return parseInt(row?.count || '0', 10) === 0
   }
 
   async cleanupExpired(): Promise<void> {
