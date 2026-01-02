@@ -8,7 +8,7 @@ COPY frontend/package*.json ./
 COPY frontend/pnpm-lock.yaml* ./
 
 # 安装 pnpm 和依赖
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+RUN npm install -g pnpm && pnpm install
 
 # 复制源代码
 COPY frontend/ .

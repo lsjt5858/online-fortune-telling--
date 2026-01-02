@@ -1,7 +1,5 @@
 import { request } from './request'
 import type {
-  ApiResponse,
-  UserInfo,
   DivinationTypeConfig,
   DivinationInput,
   DivinationResult,
@@ -12,6 +10,7 @@ import type {
   Article,
   PaginationParams,
 } from '@/types'
+import type { UserInfo } from '@/stores/user'
 
 // ========== 用户相关 ==========
 export const authApi = {

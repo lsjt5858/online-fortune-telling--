@@ -1,4 +1,4 @@
-.PHONY: help dev dev:fe dev:be build up down restart clean install test lint
+.PHONY: help dev dev-fe dev-be build up down restart clean install test lint
 
 # 默认目标
 help:
@@ -6,13 +6,13 @@ help:
 	@echo ""
 	@echo "开发命令:"
 	@echo "  make dev         - 启动全部服务 (前端 + 后端 + 数据库)"
-	@echo "  make dev:fe      - 只启动前端"
-	@echo "  make dev:be      - 只启动后端"
+	@echo "  make dev-fe      - 只启动前端"
+	@echo "  make dev-be      - 只启动后端"
 	@echo ""
 	@echo "构建命令:"
 	@echo "  make build       - 构建全部项目"
-	@echo "  make build:fe    - 只构建前端"
-	@echo "  make build:be    - 只构建后端"
+	@echo "  make build-fe    - 只构建前端"
+	@echo "  make build-be    - 只构建后端"
 	@echo ""
 	@echo "Docker 命令:"
 	@echo "  make up          - 启动 Docker 服务"
@@ -22,8 +22,8 @@ help:
 	@echo ""
 	@echo "安装命令:"
 	@echo "  make install     - 安装全部依赖"
-	@echo "  make install:fe  - 安装前端依赖"
-	@echo "  make install:be  - 安装后端依赖"
+	@echo "  make install-fe  - 安装前端依赖"
+	@echo "  make install-be  - 安装后端依赖"
 	@echo ""
 	@echo "其他命令:"
 	@echo "  make test        - 运行测试"
@@ -35,26 +35,23 @@ dev: install
 	@echo "启动全部服务..."
 	docker-compose up
 
-dev:fe:
+dev-fe:
 	@echo "启动前端服务..."
 	cd frontend && npm run dev
 
-dev:be:
+dev-be:
 	@echo "启动后端服务..."
 	docker-compose up postgres redis api-gateway
 
 # ========== 构建命令 ==========
 
-build:
-	@echo "构建全部项目..."
-	$(MAKE) build:fe
-	$(MAKE) build:be
+build: build-fe build-be
 
-build:fe:
+build-fe:
 	@echo "构建前端..."
 	cd frontend && npm run build
 
-build:be:
+build-be:
 	@echo "构建后端..."
 	cd backend/api-gateway && npm run build
 
@@ -79,15 +76,13 @@ clean:
 
 # ========== 安装命令 ==========
 
-install:
-	$(MAKE) install:fe
-	$(MAKE) install:be
+install: install-fe install-be
 
-install:fe:
+install-fe:
 	@echo "安装前端依赖..."
 	cd frontend && npm install
 
-install:be:
+install-be:
 	@echo "安装后端依赖..."
 	cd backend/api-gateway && npm install
 
