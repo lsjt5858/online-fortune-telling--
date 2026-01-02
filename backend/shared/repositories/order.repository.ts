@@ -2,26 +2,30 @@ import { Injectable } from '@nestjs/common'
 import { DatabaseService } from '@pkg/database'
 import { Order, OrderStatus, PaginationParams, PaginationResponse } from '@shared/types'
 
+export interface CreateOrderDto {
+  userId: string
+  serviceType: string
+  serviceId: string
+  amount: number
+  expireMinutes?: number
+}
+
 @Injectable()
 export class OrderRepository {
   constructor(private readonly db: DatabaseService) {}
 
-  async create(
-    userId: string,
-    orderNo: string,
-    serviceType: string,
-    serviceId: string | null,
-    amount: number,
-    expireMinutes: number = 30
-  ): Promise<Order> {
+  async create(dto: CreateOrderDto): Promise<Order> {
+    const orderNo = this.generateOrderNo()
+    const expireMinutes = dto.expireMinutes || 30
     const expiredAt = new Date(Date.now() + expireMinutes * 60 * 1000)
+
     const row = await this.db.queryOne<any>(
-      `INSERT INTO orders (order_no, user_id, service_type, service_id, amount, expired_at)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO orders (order_no, user_id, service_type, service_id, amount)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING id, order_no as "orderNo", user_id as "userId", service_type as "serviceType",
                  service_id as "serviceId", amount, status, paid_at as "paidAt",
-                 expired_at as "expiredAt", created_at as "createdAt", updated_at as "updatedAt"`,
-      [orderNo, userId, serviceType, serviceId, amount, expiredAt]
+                 created_at as "createdAt"`,
+      [orderNo, dto.userId, dto.serviceType, dto.serviceId, dto.amount]
     )
     return row
   }
@@ -30,7 +34,7 @@ export class OrderRepository {
     const row = await this.db.queryOne<any>(
       `SELECT id, order_no as "orderNo", user_id as "userId", service_type as "serviceType",
               service_id as "serviceId", amount, status, paid_at as "paidAt",
-              expired_at as "expiredAt", created_at as "createdAt", updated_at as "updatedAt"
+              created_at as "createdAt"
        FROM orders WHERE id = $1`,
       [id]
     )
@@ -41,7 +45,7 @@ export class OrderRepository {
     const row = await this.db.queryOne<any>(
       `SELECT id, order_no as "orderNo", user_id as "userId", service_type as "serviceType",
               service_id as "serviceId", amount, status, paid_at as "paidAt",
-              expired_at as "expiredAt", created_at as "createdAt", updated_at as "updatedAt"
+              created_at as "createdAt"
        FROM orders WHERE order_no = $1`,
       [orderNo]
     )
@@ -58,14 +62,14 @@ export class OrderRepository {
       this.db.query<any>(
         `SELECT id, order_no as "orderNo", user_id as "userId", service_type as "serviceType",
                 service_id as "serviceId", amount, status, paid_at as "paidAt",
-                expired_at as "expiredAt", created_at as "createdAt", updated_at as "updatedAt"
+                created_at as "createdAt"
          FROM orders
          WHERE user_id = $1
          ORDER BY created_at DESC
          LIMIT $2 OFFSET $3`,
         [userId, pagination.pageSize, offset]
       ),
-      this.db.queryOne<{ count: number }>(
+      this.db.queryOne<{ count: string }>(
         `SELECT COUNT(*) as count FROM orders WHERE user_id = $1`,
         [userId]
       ),
@@ -73,7 +77,7 @@ export class OrderRepository {
 
     return {
       list: rows,
-      total: parseInt(String(countRow.count)),
+      total: parseInt(countRow?.count || '0', 10),
       page: pagination.page,
       pageSize: pagination.pageSize,
     }
@@ -82,11 +86,11 @@ export class OrderRepository {
   async updateStatus(id: string, status: OrderStatus, paidAt: Date | null = null): Promise<Order> {
     const row = await this.db.queryOne<any>(
       `UPDATE orders
-       SET status = $2, paid_at = $3
+       SET status = $2, paid_at = $3, updated_at = CURRENT_TIMESTAMP
        WHERE id = $1
        RETURNING id, order_no as "orderNo", user_id as "userId", service_type as "serviceType",
                  service_id as "serviceId", amount, status, paid_at as "paidAt",
-                 expired_at as "expiredAt", created_at as "createdAt", updated_at as "updatedAt"`,
+                 created_at as "createdAt"`,
       [id, status, paidAt]
     )
     return row

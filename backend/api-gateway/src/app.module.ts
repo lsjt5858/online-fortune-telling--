@@ -14,6 +14,7 @@ import { LoggingInterceptor } from './interceptors/logging.interceptor'
 import { AuthModule } from './routes/auth.module'
 import { PaymentModule } from './routes/payment.module'
 import { DivinationModule } from './routes/divination.module'
+import { VipModule } from './routes/vip.module'
 
 // 数据库服务
 import { DatabaseService } from '@pkg/database'
@@ -36,6 +37,7 @@ import { DatabaseService } from '@pkg/database'
     AuthModule,
     PaymentModule,
     DivinationModule,
+    VipModule,
   ],
   controllers: [AppController],
   providers: [
