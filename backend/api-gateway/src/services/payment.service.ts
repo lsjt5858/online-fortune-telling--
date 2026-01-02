@@ -1,10 +1,41 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { AlipayUtil } from '@shared/utils/alipay'
 import { WechatPayUtil } from '@shared/utils/wechat-pay'
 import { PaymentRepository } from '@shared/repositories/payment.repository'
 import { OrderRepository } from '@shared/repositories/order.repository'
+import { VipRepository } from '@shared/repositories/vip.repository'
 import { PaymentChannel, OrderStatus } from '@shared/types'
+
+export interface PaymentResult {
+    paymentId: string
+    channel: PaymentChannel
+    platform: string
+    orderString?: string  // APP 支付
+    payUrl?: string       // H5 支付
+    h5Url?: string        // 微信 H5 支付
+    prepayId?: string     // 微信 APP 支付
+    paySign?: string
+    timestamp?: string
+    nonceStr?: string
+    timeStamp?: string
+    package?: string
+    signType?: string
+}
+
+export interface PaymentStatusResult {
+    paymentId: string
+    orderId: string
+    orderNo: string
+    channel: PaymentChannel
+    channelText: string
+    amount: number
+    amountYuan: string
+    status: string
+    statusText: string
+    paidAt: Date | null
+    createdAt: Date
+}
 
 @Injectable()
 export class PaymentService {
@@ -14,7 +45,8 @@ export class PaymentService {
     constructor(
         private readonly configService: ConfigService,
         private readonly paymentRepository: PaymentRepository,
-        private readonly orderRepository: OrderRepository
+        private readonly orderRepository: OrderRepository,
+        private readonly vipRepository: VipRepository,
     ) {
         // 初始化支付宝工具
         this.alipayUtil = new AlipayUtil({
@@ -44,21 +76,34 @@ export class PaymentService {
         platform: 'app' | 'h5' | 'jsapi'
         userIp?: string
         openid?: string
-    }) {
+    }): Promise<PaymentResult> {
         // 查询订单信息
         const order = await this.orderRepository.findByOrderNo(params.orderNo)
         if (!order) {
-            throw new Error('订单不存在')
+            throw new NotFoundException('订单不存在')
         }
 
         if (order.status !== 'pending') {
-            throw new Error('订单状态不正确')
+            throw new BadRequestException('订单状态不正确，无法支付')
         }
 
         // 检查订单是否过期
-        if (new Date() > new Date(order.expiredAt)) {
+        const expiredAt = new Date(new Date(order.createdAt).getTime() + 30 * 60 * 1000)
+        if (new Date() > expiredAt) {
             await this.orderRepository.updateStatus(order.id, OrderStatus.EXPIRED)
-            throw new Error('订单已过期')
+            throw new BadRequestException('订单已过期，请重新下单')
+        }
+
+        // 检查是否已有进行中的支付
+        const existingPayments = await this.paymentRepository.findByOrderId(order.id)
+        const pendingPayment = existingPayments.find(p => p.status === 'pending')
+        if (pendingPayment) {
+            // 返回已有的支付信息
+            return {
+                paymentId: pendingPayment.paymentId,
+                channel: pendingPayment.channel as PaymentChannel,
+                platform: params.platform,
+            }
         }
 
         // 创建支付记录
@@ -86,7 +131,7 @@ export class PaymentService {
             })
         }
 
-        throw new Error('不支持的支付渠道')
+        throw new BadRequestException('不支持的支付渠道')
     }
 
     /**
@@ -129,7 +174,7 @@ export class PaymentService {
             }
         }
 
-        throw new Error('不支持的支付平台')
+        throw new BadRequestException('不支持的支付平台')
     }
 
     /**
@@ -159,7 +204,7 @@ export class PaymentService {
             }
         } else if (params.platform === 'h5') {
             if (!params.userIp) {
-                throw new Error('H5支付需要提供用户IP')
+                throw new BadRequestException('H5支付需要提供用户IP')
             }
 
             const h5Url = await this.wechatPayUtil.createH5Payment({
@@ -177,7 +222,7 @@ export class PaymentService {
             }
         } else if (params.platform === 'jsapi') {
             if (!params.openid) {
-                throw new Error('小程序支付需要提供用户openid')
+                throw new BadRequestException('小程序支付需要提供用户openid')
             }
 
             const result = await this.wechatPayUtil.createJsapiPayment({
@@ -195,7 +240,7 @@ export class PaymentService {
             }
         }
 
-        throw new Error('不支持的支付平台')
+        throw new BadRequestException('不支持的支付平台')
     }
 
     /**
@@ -272,34 +317,98 @@ export class PaymentService {
         const payment = await this.paymentRepository.updateStatus(paymentId, status, transactionId)
 
         // 更新订单状态
-        await this.orderRepository.updateStatus(payment.orderId, OrderStatus.PAID, new Date())
+        const order = await this.orderRepository.updateStatus(payment.orderId, OrderStatus.PAID, new Date())
+
+        // 处理订单完成后的业务逻辑
+        await this.handleOrderPaid(order)
+    }
+
+    /**
+     * 处理订单支付成功
+     */
+    private async handleOrderPaid(order: any) {
+        // VIP 订单自动激活
+        if (order.serviceType === 'vip') {
+            const level = parseInt(order.serviceId, 10)
+            const config = await this.vipRepository.getConfigByLevel(level)
+            if (config) {
+                await this.vipRepository.upgradeUserVip(order.userId, level, config.duration)
+                // 更新订单为已完成
+                await this.orderRepository.updateStatus(order.id, OrderStatus.COMPLETED)
+            }
+        }
     }
 
     /**
      * 查询支付状态
      */
-    async queryPayment(paymentId: string) {
+    async queryPayment(paymentId: string): Promise<PaymentStatusResult> {
         const payment = await this.paymentRepository.findByPaymentId(paymentId)
         if (!payment) {
-            throw new Error('支付记录不存在')
+            throw new NotFoundException('支付记录不存在')
         }
 
-        // 如果已经支付成功，直接返回
-        if (payment.status === 'success') {
-            return payment
+        // 获取订单信息
+        const order = await this.orderRepository.findById(payment.orderId)
+
+        // 如果还是待支付状态，主动查询第三方
+        if (payment.status === 'pending') {
+            await this.syncPaymentStatus(payment)
         }
 
-        // 查询第三方支付状态
-        let result
-        if (payment.channel === PaymentChannel.ALIPAY) {
-            result = await this.alipayUtil.queryOrder(paymentId)
-        } else if (payment.channel === PaymentChannel.WECHAT) {
-            result = await this.wechatPayUtil.queryOrder(paymentId)
+        return this.formatPaymentStatus(payment, order)
+    }
+
+    /**
+     * 同步支付状态（主动查询第三方）
+     */
+    private async syncPaymentStatus(payment: any): Promise<void> {
+        try {
+            let result
+            if (payment.channel === PaymentChannel.ALIPAY) {
+                result = await this.alipayUtil.queryOrder(payment.paymentId)
+                if (result?.trade_status === 'TRADE_SUCCESS') {
+                    await this.updatePaymentStatus(payment.paymentId, 'success', result.trade_no)
+                }
+            } else if (payment.channel === PaymentChannel.WECHAT) {
+                result = await this.wechatPayUtil.queryOrder(payment.paymentId)
+                if (result?.trade_state === 'SUCCESS') {
+                    await this.updatePaymentStatus(payment.paymentId, 'success', result.transaction_id)
+                }
+            }
+        } catch (error) {
+            console.error('同步支付状态失败:', error)
+        }
+    }
+
+    /**
+     * 格式化支付状态
+     */
+    private formatPaymentStatus(payment: any, order: any): PaymentStatusResult {
+        const channelTexts: Record<string, string> = {
+            [PaymentChannel.WECHAT]: '微信支付',
+            [PaymentChannel.ALIPAY]: '支付宝',
+        }
+
+        const statusTexts: Record<string, string> = {
+            pending: '待支付',
+            success: '支付成功',
+            failed: '支付失败',
+            refunded: '已退款',
         }
 
         return {
-            payment,
-            thirdPartyResult: result,
+            paymentId: payment.paymentId,
+            orderId: payment.orderId,
+            orderNo: order?.orderNo || '',
+            channel: payment.channel,
+            channelText: channelTexts[payment.channel] || '未知',
+            amount: payment.amount,
+            amountYuan: (payment.amount / 100).toFixed(2),
+            status: payment.status,
+            statusText: statusTexts[payment.status] || '未知',
+            paidAt: payment.paidAt,
+            createdAt: payment.createdAt,
         }
     }
 
@@ -313,38 +422,83 @@ export class PaymentService {
     }) {
         const order = await this.orderRepository.findByOrderNo(params.orderNo)
         if (!order) {
-            throw new Error('订单不存在')
+            throw new NotFoundException('订单不存在')
         }
 
-        if (order.status !== 'paid') {
-            throw new Error('订单未支付或已退款')
+        if (order.status !== 'paid' && order.status !== 'completed') {
+            throw new BadRequestException('订单未支付或已退款')
         }
 
         const payments = await this.paymentRepository.findByOrderId(order.id)
         const successPayment = payments.find((p) => p.status === 'success')
 
         if (!successPayment) {
-            throw new Error('未找到成功的支付记录')
+            throw new NotFoundException('未找到成功的支付记录')
+        }
+
+        // 验证退款金额
+        if (params.refundAmount > order.amount) {
+            throw new BadRequestException('退款金额不能超过订单金额')
         }
 
         // 发起退款
+        let result
         if (successPayment.channel === PaymentChannel.ALIPAY) {
-            return this.alipayUtil.refund({
+            result = await this.alipayUtil.refund({
                 outTradeNo: successPayment.paymentId,
                 refundAmount: (params.refundAmount / 100).toFixed(2),
                 refundReason: params.reason,
             })
         } else if (successPayment.channel === PaymentChannel.WECHAT) {
-            return this.wechatPayUtil.refund({
+            result = await this.wechatPayUtil.refund({
                 outTradeNo: successPayment.paymentId,
                 outRefundNo: `REF${Date.now()}`,
                 refundAmount: params.refundAmount,
                 totalAmount: order.amount,
                 reason: params.reason,
             })
+        } else {
+            throw new BadRequestException('不支持的支付渠道')
         }
 
-        throw new Error('不支持的支付渠道')
+        // 更新订单状态
+        await this.orderRepository.updateStatus(order.id, OrderStatus.REFUNDED)
+        await this.paymentRepository.updateStatus(successPayment.paymentId, 'refunded', null)
+
+        return {
+            success: true,
+            message: '退款申请已提交',
+            refundAmount: params.refundAmount,
+            refundAmountYuan: (params.refundAmount / 100).toFixed(2),
+            result,
+        }
+    }
+
+    /**
+     * 关闭支付订单
+     */
+    async closePayment(paymentId: string): Promise<{ success: boolean; message: string }> {
+        const payment = await this.paymentRepository.findByPaymentId(paymentId)
+        if (!payment) {
+            throw new NotFoundException('支付记录不存在')
+        }
+
+        if (payment.status !== 'pending') {
+            throw new BadRequestException('只能关闭待支付的订单')
+        }
+
+        try {
+            if (payment.channel === PaymentChannel.ALIPAY) {
+                await this.alipayUtil.closeOrder(paymentId)
+            } else if (payment.channel === PaymentChannel.WECHAT) {
+                await this.wechatPayUtil.closeOrder(paymentId)
+            }
+
+            await this.paymentRepository.updateStatus(paymentId, 'closed', null)
+            return { success: true, message: '支付订单已关闭' }
+        } catch (error) {
+            return { success: false, message: error.message }
+        }
     }
 
     /**
@@ -352,14 +506,45 @@ export class PaymentService {
      */
     private getOrderSubject(serviceType: string): string {
         const titles: Record<string, string> = {
+            vip: '神机妙算-VIP会员',
             vip_month: '神机妙算-月度VIP会员',
             vip_year: '神机妙算-年度VIP会员',
+            vip_lifetime: '神机妙算-终身VIP会员',
+            divination: '神机妙算-占卜服务',
             bazi: '神机妙算-八字排盘',
             qimen: '神机妙算-奇门遁甲',
             bagua: '神机妙算-八卦测算',
             meihua: '神机妙算-梅花易数',
+            consultation: '神机妙算-命理咨询',
         }
 
         return titles[serviceType] || '神机妙算-占卜服务'
+    }
+
+    /**
+     * 获取用户支付记录列表
+     */
+    async getUserPayments(userId: string, page: number = 1, pageSize: number = 10) {
+        // 先获取用户的订单
+        const orders = await this.orderRepository.findByUserId(userId, { page, pageSize })
+        
+        // 获取所有订单的支付记录
+        const paymentPromises = orders.list.map(order => 
+            this.paymentRepository.findByOrderId(order.id)
+        )
+        const paymentsArrays = await Promise.all(paymentPromises)
+        
+        // 扁平化并格式化
+        const payments = paymentsArrays.flat().map((payment, index) => {
+            const order = orders.list.find(o => o.id === payment.orderId)
+            return this.formatPaymentStatus(payment, order)
+        })
+
+        return {
+            list: payments,
+            total: payments.length,
+            page,
+            pageSize,
+        }
     }
 }

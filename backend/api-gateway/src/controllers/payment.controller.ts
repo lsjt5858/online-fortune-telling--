@@ -4,19 +4,50 @@ import {
     Get,
     Body,
     Param,
+    Query,
     Headers,
     Req,
     Res,
     HttpStatus,
-    UseGuards,
+    ParseIntPipe,
+    DefaultValuePipe,
 } from '@nestjs/common'
 import { Request, Response } from 'express'
+import { IsString, IsEnum, IsNumber, IsOptional, Min } from 'class-validator'
 import { PaymentService } from '../services/payment.service'
-import { AuthGuard } from '../guards/auth.guard'
 import { Public } from '../decorators/public.decorator'
 import { PaymentChannel } from '@shared/types'
 
-@Controller('api/v1/payment')
+// DTO 定义
+class CreatePaymentDto {
+    @IsString()
+    orderNo: string
+
+    @IsEnum(PaymentChannel)
+    channel: PaymentChannel
+
+    @IsEnum(['app', 'h5', 'jsapi'])
+    platform: 'app' | 'h5' | 'jsapi'
+
+    @IsOptional()
+    @IsString()
+    openid?: string
+}
+
+class RefundDto {
+    @IsString()
+    orderNo: string
+
+    @IsNumber()
+    @Min(1)
+    refundAmount: number
+
+    @IsOptional()
+    @IsString()
+    reason?: string
+}
+
+@Controller('v1/payment')
 export class PaymentController {
     constructor(private readonly paymentService: PaymentService) { }
 
@@ -25,15 +56,8 @@ export class PaymentController {
      * POST /api/v1/payment/create
      */
     @Post('create')
-    @UseGuards(AuthGuard)
     async createPayment(
-        @Body()
-        body: {
-            orderNo: string
-            channel: PaymentChannel
-            platform: 'app' | 'h5' | 'jsapi'
-            openid?: string
-        },
+        @Body() body: CreatePaymentDto,
         @Req() req: Request
     ) {
         const userIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress
@@ -46,25 +70,38 @@ export class PaymentController {
             openid: body.openid,
         })
 
-        return {
-            success: true,
-            data: result,
-        }
+        return result
     }
 
     /**
      * 查询支付状态
-     * GET /api/v1/payment/:paymentId
+     * GET /api/v1/payment/status/:paymentId
      */
-    @Get(':paymentId')
-    @UseGuards(AuthGuard)
+    @Get('status/:paymentId')
     async queryPayment(@Param('paymentId') paymentId: string) {
-        const result = await this.paymentService.queryPayment(paymentId)
+        return this.paymentService.queryPayment(paymentId)
+    }
 
-        return {
-            success: true,
-            data: result,
-        }
+    /**
+     * 获取用户支付记录
+     * GET /api/v1/payment/list
+     */
+    @Get('list')
+    async getUserPayments(
+        @Req() req: any,
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('pageSize', new DefaultValuePipe(10), ParseIntPipe) pageSize: number,
+    ) {
+        return this.paymentService.getUserPayments(req.user.userId, page, pageSize)
+    }
+
+    /**
+     * 关闭支付订单
+     * POST /api/v1/payment/close/:paymentId
+     */
+    @Post('close/:paymentId')
+    async closePayment(@Param('paymentId') paymentId: string) {
+        return this.paymentService.closePayment(paymentId)
     }
 
     /**
@@ -124,24 +161,11 @@ export class PaymentController {
      * POST /api/v1/payment/refund
      */
     @Post('refund')
-    @UseGuards(AuthGuard)
-    async refund(
-        @Body()
-        body: {
-            orderNo: string
-            refundAmount: number
-            reason?: string
-        }
-    ) {
-        const result = await this.paymentService.refund({
+    async refund(@Body() body: RefundDto) {
+        return this.paymentService.refund({
             orderNo: body.orderNo,
             refundAmount: body.refundAmount,
             reason: body.reason,
         })
-
-        return {
-            success: true,
-            data: result,
-        }
     }
 }
